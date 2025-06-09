@@ -10,57 +10,45 @@ from src.prompt import *
 import os
 
 app = Flask(__name__)
-
 load_dotenv()
 
 PINECONE_API_KEY = os.environ.get('PINECONE_API_KEY')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-
 os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
-# Load the embeddings
-embeddings = download_hugging_face_embeddings()
+# Prompt template
+prompt = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", "{input}"),
+])
 
-# Pinecone index name
-index_name = "liberiahealthresponseai"
-
-# Create vector store from existing Pinecone index
-docsearch = PineconeVectorStore.from_existing_index(
-    index_name=index_name,
-    embedding=embeddings
-)
-
-# Create retriever
-retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-
-# Load LLM and prompt
-llm = OpenAI(temperature=0.4, max_tokens=500)
-prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ]
-)
-
-# Set up the chain
-question_answer_chain = create_stuff_documents_chain(llm, prompt)
-rag_chain = create_retrieval_chain(retriever, question_answer_chain)
-
-# Routes
 @app.route("/")
 def index():
     return render_template('chat.html')
 
-@app.route("/get", methods=["GET", "POST"])
+@app.route("/get", methods=["POST"])
 def chat():
     msg = request.form["msg"]
     print("User input:", msg)
 
+    # Load everything on-demand
+    embeddings = download_hugging_face_embeddings()
+
+    docsearch = PineconeVectorStore.from_existing_index(
+        index_name="liberiahealthresponseai",
+        embedding=embeddings
+    )
+    retriever = docsearch.as_retriever(search_type="similarity", search_kwargs={"k": 3})
+
+    llm = OpenAI(temperature=0.4, max_tokens=500)
+    question_answer_chain = create_stuff_documents_chain(llm, prompt)
+    rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
     response = rag_chain.invoke({"input": msg})
     print("Response:", response["answer"])
-
     return jsonify({"response": response["answer"]})
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
