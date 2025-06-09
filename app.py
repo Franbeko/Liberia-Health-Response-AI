@@ -47,7 +47,7 @@ def chat():
         
         # Use direct Pinecone retrieval without langchain wrapper
         from pinecone import Pinecone
-        pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+        pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_ENVIRONMENT'))
         index = pc.Index("liberiahealthresponseai")
         
         # Get embeddings
@@ -77,6 +77,6 @@ def chat():
         print(f"Error: {str(e)}", file=sys.stderr)
         return jsonify({"response": "Technical difficulty. Please try again."}), 500
 
-if __name__ == '_main_':
+if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False, threaded=False)
