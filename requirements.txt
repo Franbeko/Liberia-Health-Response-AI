@@ -14,5 +14,6 @@ langchain_experimental>=0.3.4
 langchain-huggingface>=0.0.4
 huggingface-hub>=0.20.0,<1.0.0
 transformers>=4.52.4
+torch==2.2.0
 gunicorn>=21.2.0
 -e .
