@@ -11,4 +11,3 @@ pinecone[grpc]==7.0.2
 langchain-pinecone==0.2.8
 huggingface-hub==0.20.3
 gunicorn==24.2
--e 
