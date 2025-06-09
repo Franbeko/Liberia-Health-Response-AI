@@ -33,50 +33,48 @@ def chat():
         if not msg:
             return jsonify({"response": "Please provide a message"})
 
-        # Load minimal components only when needed
+        # Import inside function to reduce memory footprint
         from langchain_openai import OpenAI
-        from langchain.chains import RetrievalQA
+        from pinecone import Pinecone
         from src.helper import get_embeddings
         
-        # Initialize with minimal memory footprint
-        llm = OpenAI(
-            temperature=0.4,
-            max_tokens=200,  # Further reduced
-            model="gpt-3.5-turbo-instruct"
-        )
-        
-        # Use direct Pinecone retrieval without langchain wrapper
-        from pinecone import Pinecone
-        pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_ENVIRONMENT'))
-        index = pc.Index("liberiahealthresponseai")
-        
-        # Get embeddings
-        embeddings = get_embeddings()
-        query_embedding = embeddings.embed_query(msg)
-        
-        # Direct Pinecone query
-        results = index.query(
-            vector=query_embedding,
-            top_k=2,  # Reduced from 3
-            include_values=False
-        )
-        
-        # Simple response formatting
-        context = "\n".join([r['id'] for r in results['matches']])
-        prompt = f"Context: {context}\nQuestion: {msg}\nAnswer:"
-        
-        response = llm(prompt)
-        clear_memory()
-        
-        return jsonify({"response": response})
-        
-    except MemoryError:
-        clear_memory()
-        return jsonify({"response": "Service overloaded. Please try simpler questions."}), 503
+        try:
+            llm = OpenAI(
+                temperature=0.4,
+                max_tokens=200,
+                model="gpt-3.5-turbo-instruct"
+            )
+            
+            pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+            index = pc.Index("liberiahealthresponseai")
+            
+            embeddings = get_embeddings()
+            query_embedding = embeddings.embed_query(msg)
+            
+            results = index.query(
+                vector=query_embedding,
+                top_k=2,
+                include_values=False
+            )
+            
+            context = "\n".join([r['id'] for r in results['matches']])
+            response = llm(f"Context: {context}\nQuestion: {msg}\nAnswer:")
+            
+            return jsonify({"response": response})
+            
+        except Exception as e:
+            print(f"Model error: {str(e)}", file=sys.stderr)
+            # Fallback to simple OpenAI response if embeddings fail
+            return jsonify({
+                "response": llm(f"Question: {msg}\nAnswer:")
+            })
+            
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
-        return jsonify({"response": "Technical difficulty. Please try again."}), 500
+        print(f"System error: {str(e)}", file=sys.stderr)
+        return jsonify({
+            "response": "I'm having trouble accessing health information. Please try a more general question or try again later."
+        })
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=False)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
