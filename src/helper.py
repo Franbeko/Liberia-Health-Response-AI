@@ -1,7 +1,6 @@
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-
+from sentence_transformers import SentenceTransformer
 
 # Extracted Data From the PDF File
 def load_pdf_file(data):
@@ -13,7 +12,6 @@ def load_pdf_file(data):
     documents = loader.load()
     return documents
 
-
 # Split the Data into Text Chunks
 def text_split(extracted_data):
     text_splitter = RecursiveCharacterTextSplitter(
@@ -23,11 +21,13 @@ def text_split(extracted_data):
     text_chunks = text_splitter.split_documents(extracted_data)
     return text_chunks
 
-
-# Get Hugging Face Embeddings
+# Get Embeddings - optimized version
 def get_embeddings():
-    return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={'device': 'cpu'},
-        encode_kwargs={'normalize_embeddings': False}
+    # Using SentenceTransformer directly for better control
+    model = SentenceTransformer(
+        'sentence-transformers/all-MiniLM-L6-v2',
+        device='cpu'
     )
+    # Reduce memory usage
+    model.max_seq_length = 128
+    return model
