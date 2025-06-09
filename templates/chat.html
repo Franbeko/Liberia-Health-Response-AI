@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LibHealth</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.5.0/css/all.css"
+    />
+  </head>
+
+  <body>
+    <div id="splash-screen">
+      <div class="splash-content">
+        <h1>LibHealth</h1>
+        <div class="spinner-border text-light" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <p>Loading your health assistant...</p>
+      </div>
+    </div>
+
+    <div class="container-fluid h-100">
+      <div class="row justify-content-center h-100">
+        <div class="col-md-8 col-xl-6 chat">
+          <div class="card">
+            <div class="card-header msg_head">
+              <div class="d-flex bd-highlight align-items-center">
+                <div class="img_cont">
+                  <img src="{{ url_for('static', filename='images/doctor.png') }}" alt="Medical AI Assistant" class="medical-icon" />
+                  <span class="online_icon"></span>
+                </div>
+                <div class="user_info">
+                  <span>LibHealth</span>
+                  <p>Ask me anything!</p>
+                </div>
+              </div>
+            </div>
+            <div id="messageFormeight" class="card-body msg_card_body"></div>
+            <div class="card-footer">
+              <form id="messageArea" class="input-group">
+                <input
+                  type="text"
+                  id="text"
+                  name="msg"
+                  class="form-control"
+                  placeholder="Type Your Message..."
+                />
+                <div class="input-group-append">
+                  <button type="submit" id="send" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+
+    <script>
+      // Hide splash screen after 2 seconds
+      $(document).ready(function () {
+        setTimeout(function () {
+          $("#splash-screen").fadeOut(500, function () {
+            $(this).remove();
+          });
+        }, 2000);
+
+        // Chat functionality
+        $("#messageArea").on("submit", function (event) {
+          event.preventDefault();
+
+          const date = new Date();
+          const hour = date.getHours();
+          const minute = date.getMinutes();
+          const str_time = hour + ":" + (minute < 10 ? "0" + minute : minute);
+          var rawText = $("#text").val();
+
+          if (rawText.trim() === "") return;
+
+          var userHtml = `
+                    <div class="d-flex justify-content-end mb-4">
+                        <div class="msg_cotainer_send">
+                            ${rawText}
+                            <i class="fas fa-paper-plane plane-icon"></i>
+                            <span class="msg_time_send">${str_time}</span>
+                        </div>
+                    </div>`;
+
+          $("#text").val("");
+          $("#messageFormeight").append(userHtml);
+          $("#messageFormeight").scrollTop(
+            $("#messageFormeight")[0].scrollHeight
+          );
+
+          $.ajax({
+            type: "POST",
+            url: "/get",
+            data: { msg: rawText },
+            success: function (data) {
+              var botHtml = `
+                            <div class="d-flex justify-content-start mb-4">
+                                <div class="msg_cotainer">
+                                    ${data.response}
+                                    <span class="msg_time">${str_time}</span>
+                                </div>
+                            </div>`;
+              $("#messageFormeight").append(botHtml);
+              $("#messageFormeight").scrollTop(
+                $("#messageFormeight")[0].scrollHeight
+              );
+            },
+            error: function () {
+              var errorHtml = `
+                            <div class="d-flex justify-content-start mb-4">
+                                <div class="msg_cotainer bg-danger text-white">
+                                    Error: Could not get response from the server.
+                                    <span class="msg_time">${str_time}</span>
+                                </div>
+                            </div>`;
+              $("#messageFormeight").append(errorHtml);
+              $("#messageFormeight").scrollTop(
+                $("#messageFormeight")[0].scrollHeight
+              );
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
