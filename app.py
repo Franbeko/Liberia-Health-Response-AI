@@ -4,8 +4,8 @@ import os
 import sys
 from functools import lru_cache
 
-# Initialize Flask app first with minimal imports
-app = Flask(_name_)
+# Initialize Flask app with correct _name_ parameter
+app = Flask(__name__)
 load_dotenv()
 
 # Configure for low-memory environment
@@ -115,12 +115,12 @@ def chat():
         print(f"Error processing request: {str(e)}", file=sys.stderr)
         return jsonify({"response": "Sorry, we're experiencing technical difficulties. Please try again."}), 500
 
-if _name_ == '_main_':
+if __name__ == '_main_':
     port = int(os.environ.get("PORT", 8080))
     # Production configuration
     app.run(
         host="0.0.0.0",
         port=port,
         debug=False,
-        threaded=False
+        threaded=False  # Important for memory management
     )
