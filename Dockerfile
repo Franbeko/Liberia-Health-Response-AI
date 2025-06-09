@@ -12,8 +12,9 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements file
+# Copy requirements file and setup.py
 COPY requirements.txt .
+COPY setup.py .
 
 # Install Python dependencies
 RUN pip install --upgrade pip
