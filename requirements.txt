@@ -12,3 +12,4 @@ langchain-pinecone
 huggingface-hub
 gunicorn
 langchain_community
+langchain-huggingface 
