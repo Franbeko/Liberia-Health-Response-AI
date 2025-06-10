@@ -26,7 +26,7 @@ def get_embeddings():
     global _cached_embeddings_model
     if _cached_embeddings_model is None:
         _cached_embeddings_model = HuggingFaceEmbeddings(
-            model_name='sentence-transformers/all-MiniLM-L6-v2',
+            model_name='paraphrase-albert-small-v2',
             model_kwargs={'device': 'cpu'}
         )
     return _cached_embeddings_model
