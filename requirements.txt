@@ -12,4 +12,3 @@ langchain-pinecone==0.2.8
 huggingface-hub==0.20.3
 gunicorn==21.2.0
 langchain_community
--e .
