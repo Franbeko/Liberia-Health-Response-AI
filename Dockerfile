@@ -14,7 +14,6 @@ WORKDIR /app
 
 # Copy requirements file and setup.py
 COPY requirements.txt .
-COPY setup.py .
 
 # Install Python dependencies
 RUN pip install --upgrade pip
