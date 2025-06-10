@@ -1,31 +1,35 @@
-# Use official Python image as base
-FROM python:3.11-slim
+FROM python:3.11-slim AS builder
 
-# Install build tools and dependencies
-RUN apt-get update && apt-get install -y \
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements file and setup.py
 COPY requirements.txt .
+COPY setup.py .
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir .
 
-# Copy the rest of the application code
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY . .
 
-RUN pip install .
-
-# Expose port (adjust if your app uses a different port)
 EXPOSE 8000
 
-# Command to run the app (adjust as needed)
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
