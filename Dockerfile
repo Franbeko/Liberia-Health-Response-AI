@@ -22,6 +22,8 @@ RUN pip install -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
+RUN pip install .
+
 # Expose port (adjust if your app uses a different port)
 EXPOSE 8000
 
